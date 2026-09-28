@@ -265,21 +265,18 @@ build.
 <a id="root-owned-sdk"></a>
 ## Everything under the Flutter SDK is owned by root
 
-- **Decision:** the precache `RUN` ends with a `find … -exec chown -h 0:0`, re-owning anything under
-  `FLUTTER_HOME` that isn't `root:root`.
-- **Why:** `flutter precache` unpacks its artifact tarballs as root, and GNU tar running as root keeps
-  each file's recorded owner. The `gradle_wrapper` artifact carries its build machine's `397546:5000`,
-  so 3.47.5 shipped five files with that owner. A Docker host whose ID map stops at 65535
-  (userns-remap, rootless, an unprivileged LXC) can't `lchown` to it, so the layer fails to
-  extract and the pull fails with `failed to Lchown … invalid argument`. Hosts with the full ID
-  range pull it fine, which is why it goes unnoticed.
-- **Why in the same `RUN`:** a `chown` in a later layer is too late. The bad owner is already baked
-  into the earlier layer, and the host has to extract that one first.
-- **Why `find` and not `chown -R`:** chowning a file from the clone layer copies it up into this
-  layer. `chown -R` over the whole SDK would duplicate the checkout. `find` touches only the files
-  that are wrong, so the layer grows by nothing.
-- **Guard:** `structure-test.yaml` fails the build if any file in the image has a UID or GID above
-  65535.
+- **Decision:** the `flutter doctor`/`precache` `RUN` exports `TAR_OPTIONS=--no-same-owner`.
+- **Why:** those commands download and untar SDK artifacts as root, and tar as root keeps each file's
+  recorded owner. Some artifacts (the gradle wrapper, from `flutter doctor`) carry a build-host UID
+  above 65535. Docker hosts whose ID map stops at 65535 (userns-remap, rootless, unprivileged LXC)
+  can't build or pull a layer holding such a file.
+- **Why not `ENV`:** it would leak into the published image and change `tar` for every user.
+- **Why not a `chown` afterwards:** tar fails before it runs on the hosts above, and it would hide any
+  new source of odd owners instead of letting the check below flag it.
+- **Check:** both images' `structure-test.yaml` fail on any UID or GID above 65535. It calls `find`
+  directly: container-structure-test expands `$VAR` in `args` from the image env, so a shell variable
+  in `sh -c` comes through empty and the check can't fail.
+- **Remove when:** Flutter passes `--no-same-owner` to tar itself.
 
 ---
 

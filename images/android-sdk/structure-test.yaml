@@ -56,6 +56,12 @@ commandTests:
     command: sh
     args: ['-c', 'test -n "$JAVA_HOME" && "$JAVA_HOME/bin/javac" -version']
     exitCode: 0
+  # A UID or GID above 65535 won't extract on userns-remapped hosts. APPENDIX.md#root-owned-sdk
+  - name: nothing is owned by a UID or GID above 65535
+    command: find
+    args: ['/', '-xdev', '(', '-uid', '+65535', '-o', '-gid', '+65535', ')', '-print']
+    exitCode: 0
+    excludedOutput: ['.']
   # yq DX tool (downloaded static Go binary): proves it's on PATH and runs. exitCode-only and
   # version-agnostic (Renovate bumps it). A wrong-arch binary wouldn't execute, so an exit 0
   # here also confirms the amd64/arm64 download matched the image arch.
