@@ -28,20 +28,20 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Prune untagged generations (keep newest 10, nothing younger than 30 days)
+      # Age only. older-than also limits the keep-n-* rules, so adding a count keeps N more on top.
+      - name: Prune untagged images older than 30 days
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1
         with:
           packages: flutter,android-sdk
-          keep-n-untagged: 10
+          delete-untagged: true
           older-than: "30 days"
           dry-run: false
 
-      - name: Prune sha tags (keep newest 20, nothing younger than 6 months)
+      - name: Prune sha tags older than 6 months
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1
         with:
           packages: flutter,android-sdk
           delete-tags: "sha-*"
           exclude-tags: latest,stable
-          keep-n-tagged: 20
           older-than: "6 months"
           dry-run: false
