@@ -16,7 +16,7 @@ commandTests:
     command: dart
     args: ['--version']
     exitCode: 0
-  # A UID or GID above 65535 won't extract on userns-remapped hosts. APPENDIX.md#root-owned-sdk
+  # APPENDIX.md#root-owned-sdk
   - name: nothing is owned by a UID or GID above 65535
     command: find
     args: ['/', '-xdev', '(', '-uid', '+65535', '-o', '-gid', '+65535', ')', '-print']

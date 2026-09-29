@@ -6,7 +6,7 @@
 - [The Android emulator isn't shipped](#no-emulator)
 - [cmdline-tools stays at rev 22, and the image deletes `bin/android`](#no-android-cli)
 - [Flutter is installed by `git clone`, not the release tarball](#flutter-clone-not-tarball)
-- [Everything under the Flutter SDK is owned by root](#root-owned-sdk)
+- [Flutter artifacts are untarred with `--no-same-owner`](#root-owned-sdk)
 - [Multi-arch via native matrix + push-by-digest + manifest merge](#digest-merge-multiarch)
 - [OCI-native images](#oci-native-images)
 - [Publishing is gated to `master` and manual dispatch](#publish-gating)
@@ -263,20 +263,14 @@ build.
 ---
 
 <a id="root-owned-sdk"></a>
-## Everything under the Flutter SDK is owned by root
+## Flutter artifacts are untarred with `--no-same-owner`
 
-- **Decision:** the `flutter doctor`/`precache` `RUN` exports `TAR_OPTIONS=--no-same-owner`.
-- **Why:** those commands download and untar SDK artifacts as root, and tar as root keeps each file's
-  recorded owner. Some artifacts (the gradle wrapper, from `flutter doctor`) carry a build-host UID
-  above 65535. Docker hosts whose ID map stops at 65535 (userns-remap, rootless, unprivileged LXC)
-  can't build or pull a layer holding such a file.
-- **Why not `ENV`:** it would leak into the published image and change `tar` for every user.
-- **Why not a `chown` afterwards:** tar fails before it runs on the hosts above, and it would hide any
-  new source of odd owners instead of letting the check below flag it.
-- **Check:** both images' `structure-test.yaml` fail on any UID or GID above 65535. It calls `find`
-  directly: container-structure-test expands `$VAR` in `args` from the image env, so a shell variable
-  in `sh -c` comes through empty and the check can't fail.
-- **Remove when:** Flutter passes `--no-same-owner` to tar itself.
+- **Why:** tar as root keeps each file's owner, and some artifacts carry a UID above 65535. Hosts
+  that only map 0–65535 (userns-remap, rootless) can't build or pull that layer.
+- **Not `ENV`:** it would change `tar` for image users.
+- **Check:** both `structure-test.yaml` files call `find` directly. container-structure-test
+  expands `$VAR` in `args` from the image env, so a shell variable would come through empty.
+- **Remove when:** Flutter passes `--no-same-owner` itself.
 
 ---
 

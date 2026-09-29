@@ -29,7 +29,7 @@ ENV FLUTTER_SUPPRESS_ANALYTICS=true \
 
 RUN git clone --depth 1 --branch ${FLUTTER_VERSION} https://github.com/flutter/flutter.git ${FLUTTER_HOME}
 
-# --no-same-owner: tar as root would keep the artifacts' high build-host UIDs. APPENDIX.md#root-owned-sdk
+# APPENDIX.md#root-owned-sdk
 # No --android-licenses: the base image already accepted the full set (APPENDIX.md#no-android-cli).
 RUN export TAR_OPTIONS=--no-same-owner \
     && flutter doctor \
