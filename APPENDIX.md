@@ -6,6 +6,7 @@
 - [The Android emulator isn't shipped](#no-emulator)
 - [cmdline-tools stays at rev 22, and the image deletes `bin/android`](#no-android-cli)
 - [Flutter is installed by `git clone`, not the release tarball](#flutter-clone-not-tarball)
+- [Flutter artifacts are untarred with `--no-same-owner`](#root-owned-sdk)
 - [Multi-arch via native matrix + push-by-digest + manifest merge](#digest-merge-multiarch)
 - [OCI-native images](#oci-native-images)
 - [Publishing is gated to `master` and manual dispatch](#publish-gating)
@@ -258,6 +259,18 @@ build.
 - **Rejected: download the x64 tarball and hand-swap an arm64 Dart SDK.** Unsupported, and the
   tarball's framework expects its bundled Dart, while the clone's bootstrap is the maintained path that
   resolves the correct Dart per arch.
+
+---
+
+<a id="root-owned-sdk"></a>
+## Flutter artifacts are untarred with `--no-same-owner`
+
+- **Why:** tar as root keeps each file's owner, and some artifacts carry a UID above 65535. Hosts
+  that only map 0–65535 (userns-remap, rootless) can't build or pull that layer.
+- **Not `ENV`:** it would change `tar` for image users.
+- **Check:** both `structure-test.yaml` files call `find` directly. container-structure-test
+  expands `$VAR` in `args` from the image env, so a shell variable would come through empty.
+- **Remove when:** Flutter passes `--no-same-owner` itself.
 
 ---
 

@@ -29,9 +29,10 @@ ENV FLUTTER_SUPPRESS_ANALYTICS=true \
 
 RUN git clone --depth 1 --branch ${FLUTTER_VERSION} https://github.com/flutter/flutter.git ${FLUTTER_HOME}
 
-# No chown here: the clone above already runs as root, so re-adding one would be a no-op.
-# No --android-licenses either: the base image already accepted the full set (APPENDIX.md#no-android-cli).
-RUN flutter doctor \
+# APPENDIX.md#root-owned-sdk
+# No --android-licenses: the base image already accepted the full set (APPENDIX.md#no-android-cli).
+RUN export TAR_OPTIONS=--no-same-owner \
+    && flutter doctor \
     && flutter precache --android
 
 # --- Flutter DX tooling: native CLIs on PATH (DX only, not needed to build) ---

@@ -16,6 +16,12 @@ commandTests:
     command: dart
     args: ['--version']
     exitCode: 0
+  # APPENDIX.md#root-owned-sdk
+  - name: nothing is owned by a UID or GID above 65535
+    command: find
+    args: ['/', '-xdev', '(', '-uid', '+65535', '-o', '-gid', '+65535', ')', '-print']
+    exitCode: 0
+    excludedOutput: ['.']
   # DX CLIs from the flutter Dockerfile's "Flutter DX tooling" layer: prove they're on PATH and
   # run. Version-agnostic on purpose (Renovate bumps them), and --help is the stable exit-0 call.
   - name: cider runs (changelog + version-bump DX tool)
